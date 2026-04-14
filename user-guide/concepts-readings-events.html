@@ -279,6 +279,7 @@
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="../library-user-guide/index.html">Introduction</a></li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="../library-user-guide/upgrading/index.html">Upgrade Guides</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../library-user-guide/upgrading/54.0.0.html">DataFusion 54.0.0</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../library-user-guide/upgrading/53.0.0.html">DataFusion 53.0.0</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../library-user-guide/upgrading/52.0.0.html">DataFusion 52.0.0</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../library-user-guide/upgrading/51.0.0.html">DataFusion 51.0.0</a></li>
@@ -433,6 +434,12 @@
 <h2>✨ Good Reads<a class="headerlink" href="#good-reads" title="Link to this heading">#</a></h2>
 <p>This is a list of DataFusion related blog posts, articles, and other resources. Please open a PR to add any new resources you create or find</p>
 <ul class="simple">
+<li><p><strong>2026-04-04</strong> <a class="reference external" href="https://www.youtube.com/watch?v=TeFsBVIYBis">Video: Generalized Consensus &amp; Native Top-K Joins in ParadeDB</a></p></li>
+<li><p><strong>2026-03-31</strong> <a class="reference external" href="https://datafusion.apache.org/blog/2026/03/31/custom-table-providers/">Blog: Writing Custom Table Providers in Apache DataFusion</a></p></li>
+<li><p><strong>2026-03-24</strong> <a class="reference external" href="https://www.youtube.com/watch?v=HkYF2So6nHQ">Podcast: The Data Fusion Secret &amp; Why Custom Query Engines Fail with Nikita Lapkov</a></p></li>
+<li><p><strong>2026-03-20</strong> <a class="reference external" href="https://datafusion.apache.org/blog/2026/03/20/multi-layer-pruning/">Blog: Turning LIMIT into an I/O Optimization: Inside DataFusion’s Multi-Layer Pruning Stack</a></p></li>
+<li><p><strong>2026-02-09</strong> <a class="reference external" href="https://blog.xiangpeng.systems/posts/vector-search-with-parquet-datafusion/">Blog: Vector search using only Parquet and DataFusion</a></p></li>
+<li><p><strong>2026-02-02</strong> <a class="reference external" href="https://datafusion.apache.org/blog/2026/02/02/case-expression/">Blog: Optimizing SQL CASE Expression Evaluation</a></p></li>
 <li><p><strong>2026-01-12</strong> <a class="reference external" href="https://datafusion.apache.org/blog/2026/01/12/extending-sql">Blog: Extending SQL in DataFusion: from -&gt;&gt; to TABLESAMPLE</a></p></li>
 <li><p><strong>2025-12-15</strong> <a class="reference external" href="https://datafusion.apache.org/blog/2025/12/15/avoid-consecutive-repartitions">Blog: Optimizing Repartitions in DataFusion: How I Went From Database Noob to Core Contribution</a></p></li>
 <li><p><strong>2025-09-21</strong> <a class="reference external" href="https://datafusion.apache.org/blog/2025/09/21/custom-types-using-metadata">Blog: Implementing User Defined Types and Custom Metadata in DataFusion</a></p></li>
@@ -506,25 +513,41 @@
 <section id="release-notes-updates">
 <h2>📅 Release Notes &amp; Updates<a class="headerlink" href="#release-notes-updates" title="Link to this heading">#</a></h2>
 <ul class="simple">
-<li><p><strong>2025-03-24</strong> <a class="reference external" href="https://datafusion.apache.org/blog/2025/03/24/datafusion-46.0.0/">Apache DataFusion 46.0.0 Released</a></p></li>
-<li><p><strong>2024-09-14</strong> <a class="reference external" href="https://datafusion.apache.org/blog/2024/12/14/datafusion-python-43.1.0/">Apache DataFusion Python 43.1.0 Released</a></p></li>
-<li><p><strong>2024-08-24</strong> <a class="reference external" href="https://datafusion.apache.org/blog/2024/08/20/python-datafusion-40.0.0/">Apache DataFusion Python 40.1.0 Released, Significant usability updates</a></p></li>
-<li><p><strong>2024-07-24</strong> <a class="reference external" href="https://datafusion.apache.org/blog/2024/07/24/datafusion-40.0.0/">DataFusion 40.0.0 Release</a></p></li>
-<li><p><strong>2024-01-19</strong> <a class="reference external" href="https://datafusion.apache.org/blog/2024/01/19/datafusion-34.0.0/">DataFusion 34.0.0 Release</a></p></li>
-<li><p><strong>2023-06-24</strong> <a class="reference external" href="https://arrow.apache.org/blog/2023/06/24/datafusion-25.0.0/">DataFusion 25.0.0 Release</a></p></li>
-<li><p><strong>2023-01-19</strong> <a class="reference external" href="https://arrow.apache.org/blog/2023/01/19/datafusion-16.0.0/">DataFusion 16.0.0 Release</a></p></li>
-<li><p><strong>2022-10-25</strong> <a class="reference external" href="https://arrow.apache.org/blog/2022/10/25/datafusion-13.0.0/">DataFusion 13.0.0 Release</a></p></li>
-<li><p><strong>2022-05-16</strong> <a class="reference external" href="https://arrow.apache.org/blog/2022/05/16/datafusion-8.0.0/">DataFusion 8.0.0 Release</a></p></li>
-<li><p><strong>2022-02-28</strong> <a class="reference external" href="https://arrow.apache.org/blog/2022/02/28/datafusion-7.0.0/">DataFusion 7.0.0 Release</a></p></li>
-<li><p><strong>2021-11-19</strong> <a class="reference external" href="https://arrow.apache.org/blog/2021/11/19/datafusion-6.0.0/">DataFusion 6.0.0 Release</a></p></li>
-<li><p><strong>2021-08-18</strong> <a class="reference external" href="https://arrow.apache.org/blog/2021/08/18/datafusion-5.0.0/">DataFusion 5.0.0 Release</a></p></li>
-<li><p><strong>2019-09-22</strong> <a class="reference external" href="https://andygrove.io/2019/09/datafusion-0.15.0-release-notes/">DataFusion 0.15.0 Release Notes</a></p></li>
+<li><p><strong>2026-04-02</strong> <a class="reference external" href="https://datafusion.apache.org/blog/2026/04/02/datafusion-53.0.0">Apache DataFusion 53.0.0 Released</a></p></li>
+<li><p><strong>2026-03-18</strong> <a class="reference external" href="https://datafusion.apache.org/blog/2026/03/18/datafusion-comet-0.14.0">Apache DataFusion Comet 0.14.0 Release</a></p></li>
+<li><p><strong>2026-01-30</strong> <a class="reference external" href="https://datafusion.apache.org/blog/2026/01/30/datafusion-comet-0.13.0">Apache DataFusion Comet 0.13.0 Release</a></p></li>
+<li><p><strong>2026-01-12</strong> <a class="reference external" href="https://datafusion.apache.org/blog/2026/01/12/datafusion-52.0.0">Apache DataFusion 52.0.0 Released</a></p></li>
+<li><p><strong>2025-12-04</strong> <a class="reference external" href="https://datafusion.apache.org/blog/2025/12/04/datafusion-comet-0.12.0">Apache DataFusion Comet 0.12.0 Release</a></p></li>
+<li><p><strong>2025-11-25</strong> <a class="reference external" href="https://datafusion.apache.org/blog/2025/11/25/datafusion-51.0.0">Apache DataFusion 51.0.0 Released</a></p></li>
+<li><p><strong>2025-10-21</strong> <a class="reference external" href="https://datafusion.apache.org/blog/2025/10/21/datafusion-comet-0.11.0">Apache DataFusion Comet 0.11.0 Release</a></p></li>
+<li><p><strong>2025-09-29</strong> <a class="reference external" href="https://datafusion.apache.org/blog/2025/09/29/datafusion-50.0.0">Apache DataFusion 50.0.0 Released</a></p></li>
+<li><p><strong>2025-09-16</strong> <a class="reference external" href="https://datafusion.apache.org/blog/2025/09/16/datafusion-comet-0.10.0">Apache DataFusion Comet 0.10.0 Release</a></p></li>
+<li><p><strong>2025-07-28</strong> <a class="reference external" href="https://datafusion.apache.org/blog/2025/07/28/datafusion-49.0.0">Apache DataFusion 49.0.0 Released</a></p></li>
+<li><p><strong>2025-07-16</strong> <a class="reference external" href="https://datafusion.apache.org/blog/2025/07/16/datafusion-48.0.0">Apache DataFusion 48.0.0 Released</a></p></li>
+<li><p><strong>2025-07-11</strong> <a class="reference external" href="https://datafusion.apache.org/blog/2025/07/11/datafusion-47.0.0">Apache DataFusion 47.0.0 Released</a></p></li>
+<li><p><strong>2025-07-01</strong> <a class="reference external" href="https://datafusion.apache.org/blog/2025/07/01/datafusion-comet-0.9.0">Apache DataFusion Comet 0.9.0 Release</a></p></li>
+<li><p><strong>2025-05-06</strong> <a class="reference external" href="https://datafusion.apache.org/blog/2025/05/06/datafusion-comet-0.8.0">Apache DataFusion Comet 0.8.0 Release</a></p></li>
+<li><p><strong>2025-03-30</strong> <a class="reference external" href="https://datafusion.apache.org/blog/2025/03/30/datafusion-python-46.0.0">Apache DataFusion Python 46.0.0 Released</a></p></li>
+<li><p><strong>2025-03-24</strong> <a class="reference external" href="https://datafusion.apache.org/blog/2025/03/24/datafusion-46.0.0">Apache DataFusion 46.0.0 Released</a></p></li>
+<li><p><strong>2025-03-20</strong> <a class="reference external" href="https://datafusion.apache.org/blog/2025/03/20/datafusion-comet-0.7.0">Apache DataFusion Comet 0.7.0 Release</a></p></li>
+<li><p><strong>2025-02-20</strong> <a class="reference external" href="https://datafusion.apache.org/blog/2025/02/20/datafusion-45.0.0">Apache DataFusion 45.0.0 Released</a></p></li>
+<li><p><strong>2025-02-17</strong> <a class="reference external" href="https://datafusion.apache.org/blog/2025/02/17/datafusion-comet-0.6.0">Apache DataFusion Comet 0.6.0 Release</a></p></li>
+<li><p><strong>2025-02-02</strong> <a class="reference external" href="https://datafusion.apache.org/blog/2025/02/02/datafusion-ballista-43.0.0">Apache DataFusion Ballista 43.0.0 Released</a></p></li>
+<li><p><strong>2025-01-17</strong> <a class="reference external" href="https://datafusion.apache.org/blog/2025/01/17/datafusion-comet-0.5.0">Apache DataFusion Comet 0.5.0 Release</a></p></li>
 </ul>
 </section>
 </section>
 <section id="community-events">
 <h1>🌎 Community Events<a class="headerlink" href="#community-events" title="Link to this heading">#</a></h1>
 <ul class="simple">
+<li><p><strong>2026-07-22</strong> <a class="reference external" href="https://github.com/apache/datafusion/discussions/18428">Denver Apache DataFusion Meetup</a> - <a class="reference external" href="https://luma.com/jsu6faie">RSVP</a></p></li>
+<li><p><strong>2026-05-12</strong> <a class="reference external" href="https://github.com/apache/datafusion/discussions/20030">New York City Apache DataFusion Meetup</a> - <a class="reference external" href="https://luma.com/adhshv92">RSVP</a></p></li>
+<li><p><strong>2026-04-23</strong> <a class="reference external" href="https://github.com/apache/datafusion/discussions/13500">Seattle Apache DataFusion Meetup</a> - <a class="reference external" href="https://luma.com/hxshbp0m">RSVP</a></p></li>
+<li><p><strong>2026-04-22</strong> <a class="reference external" href="https://github.com/apache/datafusion/discussions/19817">Portland Apache DataFusion Meetup</a> - <a class="reference external" href="https://luma.com/dsp3ud82">RSVP</a></p></li>
+<li><p><strong>2026-03-05</strong> <a class="reference external" href="https://github.com/apache/datafusion/discussions/18429">Stockholm Apache DataFusion Meetup</a> - <a class="reference external" href="https://luma.com/ctqtiqap">RSVP</a>, <a class="reference external" href="https://youtu.be/9u4cNmL14Xs">Recording</a></p></li>
+<li><p><strong>2026-02-19</strong> <a class="reference external" href="https://github.com/apache/datafusion/discussions/19859">San Francisco Apache DataFusion Meetup</a> - <a class="reference external" href="https://luma.com/p7r6fp2z">RSVP</a>, <a class="reference external" href="https://www.youtube.com/playlist?list=PL42Ljm2tTt5peGUWMBN7WFkASq73j8PoU">Recording</a></p></li>
+<li><p><strong>2025-11-12</strong> <a class="reference external" href="https://github.com/apache/datafusion/discussions/16703">Boston Apache DataFusion Meetup</a> - <a class="reference external" href="https://youtu.be/wCAud478Dg8">Recording</a>, <a class="reference external" href="https://drive.google.com/file/d/18KGH_wGHkgdAfjy5sQVKFhnN1GyYXSzU">Slides</a></p></li>
+<li><p><strong>2025-09-15</strong> <a class="reference external" href="https://github.com/apache/datafusion/discussions/16265">New York City Apache DataFusion Meetup</a> - <a class="reference external" href="https://lu.ma/qkcyycg0">RSVP</a>, <a class="reference external" href="https://youtu.be/ElAiN_1fX_4">Recording</a></p></li>
 <li><p><strong>2025-01-23</strong> <a class="reference external" href="https://github.com/apache/datafusion/discussions/12988">Amsterdam Apache DataFusion Meetup</a> - <a class="reference external" href="https://github.com/apache/datafusion/discussions/12988">Slides</a></p></li>
 <li><p><strong>2025-01-22</strong> <a class="reference external" href="https://www.linkedin.com/posts/seshendranalla_apache-datafusion-community-meeting-2025-activity-7290384383201435648-8tqv">Datadog Apache DataFusion Community Meeting</a> - <a class="reference external" href="https://www.youtube.com/watch?v=ceTo2vUyRI0">Recording</a></p></li>
 <li><p><strong>2025-01-15</strong> <a class="reference external" href="https://github.com/apache/datafusion/discussions/13165">Boston Apache DataFusion Meetup</a> - <a class="reference external" href="https://docs.google.com/presentation/d/1_zBLHdqxPlhWuNK2oCA2d_hCpb6HWgHbVJBseiUXA80">Slides</a></p></li>

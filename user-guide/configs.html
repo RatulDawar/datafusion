@@ -279,6 +279,7 @@
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="../library-user-guide/index.html">Introduction</a></li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="../library-user-guide/upgrading/index.html">Upgrade Guides</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../library-user-guide/upgrading/54.0.0.html">DataFusion 54.0.0</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../library-user-guide/upgrading/53.0.0.html">DataFusion 53.0.0</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../library-user-guide/upgrading/52.0.0.html">DataFusion 52.0.0</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../library-user-guide/upgrading/51.0.0.html">DataFusion 51.0.0</a></li>
@@ -605,7 +606,7 @@ example, to configure <code class="docutils literal notranslate"><span class="pr
 <td><p>(writing) Target maximum number of rows in each row group (defaults to 1M rows). Writing larger row groups requires more memory to write, but can get better compression and be faster to read.</p></td>
 </tr>
 <tr class="row-even"><td><p>datafusion.execution.parquet.created_by</p></td>
-<td><p>datafusion version 52.1.0</p></td>
+<td><p>datafusion version 53.0.0</p></td>
 <td><p>(writing) Sets “created by” property</p></td>
 </tr>
 <tr class="row-odd"><td><p>datafusion.execution.parquet.column_index_truncate_length</p></td>
@@ -648,25 +649,33 @@ example, to configure <code class="docutils literal notranslate"><span class="pr
 <td><p>2</p></td>
 <td><p>(writing) By default parallel parquet writer is tuned for minimum memory usage in a streaming execution plan. You may see a performance benefit when writing large parquet files by increasing maximum_parallel_row_group_writers and maximum_buffered_record_batches_per_stream if your system has idle cores and can tolerate additional memory usage. Boosting these values is likely worthwhile when writing out already in-memory data, such as from a cached data frame.</p></td>
 </tr>
-<tr class="row-odd"><td><p>datafusion.execution.planning_concurrency</p></td>
+<tr class="row-odd"><td><p>datafusion.execution.parquet.use_content_defined_chunking</p></td>
+<td><p>NULL</p></td>
+<td><p>(writing) EXPERIMENTAL: Enable content-defined chunking (CDC) when writing parquet files. When <code class="docutils literal notranslate"><span class="pre">Some</span></code>, CDC is enabled with the given options; when <code class="docutils literal notranslate"><span class="pre">None</span></code> (the default), CDC is disabled. When CDC is enabled, parallel writing is automatically disabled since the chunker state must persist across row groups.</p></td>
+</tr>
+<tr class="row-even"><td><p>datafusion.execution.planning_concurrency</p></td>
 <td><p>0</p></td>
 <td><p>Fan-out during initial physical planning. This is mostly use to plan <code class="docutils literal notranslate"><span class="pre">UNION</span></code> children in parallel. Defaults to the number of CPU cores on the system</p></td>
 </tr>
-<tr class="row-even"><td><p>datafusion.execution.skip_physical_aggregate_schema_check</p></td>
+<tr class="row-odd"><td><p>datafusion.execution.skip_physical_aggregate_schema_check</p></td>
 <td><p>false</p></td>
 <td><p>When set to true, skips verifying that the schema produced by planning the input of <code class="docutils literal notranslate"><span class="pre">LogicalPlan::Aggregate</span></code> exactly matches the schema of the input plan. When set to false, if the schema does not match exactly (including nullability and metadata), a planning error will be raised. This is used to workaround bugs in the planner that are now caught by the new schema verification step.</p></td>
 </tr>
-<tr class="row-odd"><td><p>datafusion.execution.spill_compression</p></td>
+<tr class="row-even"><td><p>datafusion.execution.spill_compression</p></td>
 <td><p>uncompressed</p></td>
 <td><p>Sets the compression codec used when spilling data to disk. Since datafusion writes spill files using the Arrow IPC Stream format, only codecs supported by the Arrow IPC Stream Writer are allowed. Valid values are: uncompressed, lz4_frame, zstd. Note: lz4_frame offers faster (de)compression, but typically results in larger spill files. In contrast, zstd achieves higher compression ratios at the cost of slower (de)compression speed.</p></td>
 </tr>
-<tr class="row-even"><td><p>datafusion.execution.sort_spill_reservation_bytes</p></td>
+<tr class="row-odd"><td><p>datafusion.execution.sort_spill_reservation_bytes</p></td>
 <td><p>10485760</p></td>
 <td><p>Specifies the reserved memory for each spillable sort operation to facilitate an in-memory merge. When a sort operation spills to disk, the in-memory data must be sorted and merged before being written to a file. This setting reserves a specific amount of memory for that in-memory sort/merge process. Note: This setting is irrelevant if the sort operation cannot spill (i.e., if there’s no <code class="docutils literal notranslate"><span class="pre">DiskManager</span></code> configured).</p></td>
 </tr>
-<tr class="row-odd"><td><p>datafusion.execution.sort_in_place_threshold_bytes</p></td>
+<tr class="row-even"><td><p>datafusion.execution.sort_in_place_threshold_bytes</p></td>
 <td><p>1048576</p></td>
 <td><p>When sorting, below what size should data be concatenated and sorted in a single RecordBatch rather than sorted in batches and merged.</p></td>
+</tr>
+<tr class="row-odd"><td><p>datafusion.execution.sort_pushdown_buffer_capacity</p></td>
+<td><p>1073741824</p></td>
+<td><p>Maximum buffer capacity (in bytes) per partition for BufferExec inserted during sort pushdown optimization. When PushdownSort eliminates a SortExec under SortPreservingMergeExec, a BufferExec is inserted to replace SortExec’s buffering role. This prevents I/O stalls by allowing the scan to run ahead of the merge. This uses strictly less memory than the SortExec it replaces (which buffers the entire partition). The buffer respects the global memory pool limit. Setting this to a large value is safe — actual memory usage is bounded by partition size and global memory limits.</p></td>
 </tr>
 <tr class="row-even"><td><p>datafusion.execution.max_spill_file_size_bytes</p></td>
 <td><p>134217728</p></td>
@@ -732,21 +741,29 @@ example, to configure <code class="docutils literal notranslate"><span class="pr
 <td><p>false</p></td>
 <td><p>Whether to enable ANSI SQL mode. The flag is experimental and relevant only for DataFusion Spark built-in functions When <code class="docutils literal notranslate"><span class="pre">enable_ansi_mode</span></code> is set to <code class="docutils literal notranslate"><span class="pre">true</span></code>, the query engine follows ANSI SQL semantics for expressions, casting, and error handling. This means: - <strong>Strict type coercion rules:</strong> implicit casts between incompatible types are disallowed. - <strong>Standard SQL arithmetic behavior:</strong> operations such as division by zero, numeric overflow, or invalid casts raise runtime errors rather than returning <code class="docutils literal notranslate"><span class="pre">NULL</span></code> or adjusted values. - <strong>Consistent ANSI behavior</strong> for string concatenation, comparisons, and <code class="docutils literal notranslate"><span class="pre">NULL</span></code> handling. When <code class="docutils literal notranslate"><span class="pre">enable_ansi_mode</span></code> is <code class="docutils literal notranslate"><span class="pre">false</span></code> (the default), the engine uses a more permissive, non-ANSI mode designed for user convenience and backward compatibility. In this mode: - Implicit casts between types are allowed (e.g., string to integer when possible). - Arithmetic operations are more lenient — for example, <code class="docutils literal notranslate"><span class="pre">abs()</span></code> on the minimum representable integer value returns the input value instead of raising overflow. - Division by zero or invalid casts may return <code class="docutils literal notranslate"><span class="pre">NULL</span></code> instead of failing. # Default <code class="docutils literal notranslate"><span class="pre">false</span></code> — ANSI SQL mode is disabled by default.</p></td>
 </tr>
-<tr class="row-even"><td><p>datafusion.optimizer.enable_distinct_aggregation_soft_limit</p></td>
+<tr class="row-even"><td><p>datafusion.execution.hash_join_buffering_capacity</p></td>
+<td><p>0</p></td>
+<td><p>How many bytes to buffer in the probe side of hash joins while the build side is concurrently being built. Without this, hash joins will wait until the full materialization of the build side before polling the probe side. This is useful in scenarios where the query is not completely CPU bounded, allowing to do some early work concurrently and reducing the latency of the query. Note that when hash join buffering is enabled, the probe side will start eagerly polling data, not giving time for the producer side of dynamic filters to produce any meaningful predicate. Queries with dynamic filters might see performance degradation. Disabled by default, set to a number greater than 0 for enabling it.</p></td>
+</tr>
+<tr class="row-odd"><td><p>datafusion.optimizer.enable_distinct_aggregation_soft_limit</p></td>
 <td><p>true</p></td>
 <td><p>When set to true, the optimizer will push a limit operation into grouped aggregations which have no aggregate expressions, as a soft limit, emitting groups once the limit is reached, before all rows in the group are read.</p></td>
 </tr>
-<tr class="row-odd"><td><p>datafusion.optimizer.enable_round_robin_repartition</p></td>
+<tr class="row-even"><td><p>datafusion.optimizer.enable_round_robin_repartition</p></td>
 <td><p>true</p></td>
 <td><p>When set to true, the physical plan optimizer will try to add round robin repartitioning to increase parallelism to leverage more CPU cores</p></td>
 </tr>
-<tr class="row-even"><td><p>datafusion.optimizer.enable_topk_aggregation</p></td>
+<tr class="row-odd"><td><p>datafusion.optimizer.enable_topk_aggregation</p></td>
 <td><p>true</p></td>
 <td><p>When set to true, the optimizer will attempt to perform limit operations during aggregations, if possible</p></td>
 </tr>
-<tr class="row-odd"><td><p>datafusion.optimizer.enable_window_limits</p></td>
+<tr class="row-even"><td><p>datafusion.optimizer.enable_window_limits</p></td>
 <td><p>true</p></td>
 <td><p>When set to true, the optimizer will attempt to push limit operations past window functions, if possible</p></td>
+</tr>
+<tr class="row-odd"><td><p>datafusion.optimizer.enable_topk_repartition</p></td>
+<td><p>true</p></td>
+<td><p>When set to true, the optimizer will push TopK (Sort with fetch) below hash repartition when the partition key is a prefix of the sort key, reducing data volume before the shuffle.</p></td>
 </tr>
 <tr class="row-even"><td><p>datafusion.optimizer.enable_topk_dynamic_filter_pushdown</p></td>
 <td><p>true</p></td>
@@ -819,6 +836,14 @@ example, to configure <code class="docutils literal notranslate"><span class="pr
 <tr class="row-odd"><td><p>datafusion.optimizer.top_down_join_key_reordering</p></td>
 <td><p>true</p></td>
 <td><p>When set to true, the physical plan optimizer will run a top down process to reorder the join keys</p></td>
+</tr>
+<tr class="row-even"><td><p>datafusion.optimizer.join_reordering</p></td>
+<td><p>true</p></td>
+<td><p>When set to true, the physical plan optimizer may swap join inputs based on statistics. When set to false, statistics-driven join input reordering is disabled and the original join order in the query is used.</p></td>
+</tr>
+<tr class="row-odd"><td><p>datafusion.optimizer.use_statistics_registry</p></td>
+<td><p>false</p></td>
+<td><p>When set to true, the physical plan optimizer uses the pluggable <code class="docutils literal notranslate"><span class="pre">StatisticsRegistry</span></code> for statistics propagation across operators. This enables more accurate cardinality estimates compared to each operator’s built-in <code class="docutils literal notranslate"><span class="pre">partition_statistics</span></code>.</p></td>
 </tr>
 <tr class="row-even"><td><p>datafusion.optimizer.prefer_hash_join</p></td>
 <td><p>true</p></td>
@@ -896,80 +921,97 @@ example, to configure <code class="docutils literal notranslate"><span class="pr
 <td><p>dev</p></td>
 <td><p>Verbosity level for “EXPLAIN ANALYZE”. Default is “dev” “summary” shows common metrics for high-level insights. “dev” provides deep operator-level introspection for developers.</p></td>
 </tr>
-<tr class="row-odd"><td><p>datafusion.sql_parser.parse_float_as_decimal</p></td>
+<tr class="row-odd"><td><p>datafusion.explain.analyze_categories</p></td>
+<td><p>all</p></td>
+<td><p>Which metric categories to include in “EXPLAIN ANALYZE” output. Comma-separated list of: “rows”, “bytes”, “timing”, “uncategorized”. Use “none” to show plan structure only, or “all” (default) to show everything. Metrics without a declared category are treated as “uncategorized”.</p></td>
+</tr>
+<tr class="row-even"><td><p>datafusion.sql_parser.parse_float_as_decimal</p></td>
 <td><p>false</p></td>
 <td><p>When set to true, SQL parser will parse float as decimal type</p></td>
 </tr>
-<tr class="row-even"><td><p>datafusion.sql_parser.enable_ident_normalization</p></td>
+<tr class="row-odd"><td><p>datafusion.sql_parser.enable_ident_normalization</p></td>
 <td><p>true</p></td>
 <td><p>When set to true, SQL parser will normalize ident (convert ident to lowercase when not quoted)</p></td>
 </tr>
-<tr class="row-odd"><td><p>datafusion.sql_parser.enable_options_value_normalization</p></td>
+<tr class="row-even"><td><p>datafusion.sql_parser.enable_options_value_normalization</p></td>
 <td><p>false</p></td>
 <td><p>When set to true, SQL parser will normalize options value (convert value to lowercase). Note that this option is ignored and will be removed in the future. All case-insensitive values are normalized automatically.</p></td>
 </tr>
-<tr class="row-even"><td><p>datafusion.sql_parser.dialect</p></td>
+<tr class="row-odd"><td><p>datafusion.sql_parser.dialect</p></td>
 <td><p>generic</p></td>
 <td><p>Configure the SQL dialect used by DataFusion’s parser; supported values include: Generic, MySQL, PostgreSQL, Hive, SQLite, Snowflake, Redshift, MsSQL, ClickHouse, BigQuery, Ansi, DuckDB and Databricks.</p></td>
 </tr>
-<tr class="row-odd"><td><p>datafusion.sql_parser.support_varchar_with_length</p></td>
+<tr class="row-even"><td><p>datafusion.sql_parser.support_varchar_with_length</p></td>
 <td><p>true</p></td>
 <td><p>If true, permit lengths for <code class="docutils literal notranslate"><span class="pre">VARCHAR</span></code> such as <code class="docutils literal notranslate"><span class="pre">VARCHAR(20)</span></code>, but ignore the length. If false, error if a <code class="docutils literal notranslate"><span class="pre">VARCHAR</span></code> with a length is specified. The Arrow type system does not have a notion of maximum string length and thus DataFusion can not enforce such limits.</p></td>
 </tr>
-<tr class="row-even"><td><p>datafusion.sql_parser.map_string_types_to_utf8view</p></td>
+<tr class="row-odd"><td><p>datafusion.sql_parser.map_string_types_to_utf8view</p></td>
 <td><p>true</p></td>
 <td><p>If true, string types (VARCHAR, CHAR, Text, and String) are mapped to <code class="docutils literal notranslate"><span class="pre">Utf8View</span></code> during SQL planning. If false, they are mapped to <code class="docutils literal notranslate"><span class="pre">Utf8</span></code>. Default is true.</p></td>
 </tr>
-<tr class="row-odd"><td><p>datafusion.sql_parser.collect_spans</p></td>
+<tr class="row-even"><td><p>datafusion.sql_parser.collect_spans</p></td>
 <td><p>false</p></td>
 <td><p>When set to true, the source locations relative to the original SQL query (i.e. <a class="reference external" href="https://docs.rs/sqlparser/latest/sqlparser/tokenizer/struct.Span.html"><code class="docutils literal notranslate"><span class="pre">Span</span></code></a>) will be collected and recorded in the logical plan nodes.</p></td>
 </tr>
-<tr class="row-even"><td><p>datafusion.sql_parser.recursion_limit</p></td>
+<tr class="row-odd"><td><p>datafusion.sql_parser.recursion_limit</p></td>
 <td><p>50</p></td>
 <td><p>Specifies the recursion depth limit when parsing complex SQL Queries</p></td>
 </tr>
-<tr class="row-odd"><td><p>datafusion.sql_parser.default_null_ordering</p></td>
+<tr class="row-even"><td><p>datafusion.sql_parser.default_null_ordering</p></td>
 <td><p>nulls_max</p></td>
 <td><p>Specifies the default null ordering for query results. There are 4 options: - <code class="docutils literal notranslate"><span class="pre">nulls_max</span></code>: Nulls appear last in ascending order. - <code class="docutils literal notranslate"><span class="pre">nulls_min</span></code>: Nulls appear first in ascending order. - <code class="docutils literal notranslate"><span class="pre">nulls_first</span></code>: Nulls always be first in any order. - <code class="docutils literal notranslate"><span class="pre">nulls_last</span></code>: Nulls always be last in any order. By default, <code class="docutils literal notranslate"><span class="pre">nulls_max</span></code> is used to follow Postgres’s behavior. postgres rule: <a class="reference external" href="https://www.postgresql.org/docs/current/queries-order.html">https://www.postgresql.org/docs/current/queries-order.html</a></p></td>
 </tr>
-<tr class="row-even"><td><p>datafusion.format.safe</p></td>
+<tr class="row-odd"><td><p>datafusion.format.safe</p></td>
 <td><p>true</p></td>
 <td><p>If set to <code class="docutils literal notranslate"><span class="pre">true</span></code> any formatting errors will be written to the output instead of being converted into a [<code class="docutils literal notranslate"><span class="pre">std::fmt::Error</span></code>]</p></td>
 </tr>
-<tr class="row-odd"><td><p>datafusion.format.null</p></td>
+<tr class="row-even"><td><p>datafusion.format.null</p></td>
 <td><p></p></td>
 <td><p>Format string for nulls</p></td>
 </tr>
-<tr class="row-even"><td><p>datafusion.format.date_format</p></td>
+<tr class="row-odd"><td><p>datafusion.format.date_format</p></td>
 <td><p>%Y-%m-%d</p></td>
 <td><p>Date format for date arrays</p></td>
 </tr>
-<tr class="row-odd"><td><p>datafusion.format.datetime_format</p></td>
+<tr class="row-even"><td><p>datafusion.format.datetime_format</p></td>
 <td><p>%Y-%m-%dT%H:%M:%S%.f</p></td>
 <td><p>Format for DateTime arrays</p></td>
 </tr>
-<tr class="row-even"><td><p>datafusion.format.timestamp_format</p></td>
+<tr class="row-odd"><td><p>datafusion.format.timestamp_format</p></td>
 <td><p>%Y-%m-%dT%H:%M:%S%.f</p></td>
 <td><p>Timestamp format for timestamp arrays</p></td>
 </tr>
-<tr class="row-odd"><td><p>datafusion.format.timestamp_tz_format</p></td>
+<tr class="row-even"><td><p>datafusion.format.timestamp_tz_format</p></td>
 <td><p>NULL</p></td>
 <td><p>Timestamp format for timestamp with timezone arrays. When <code class="docutils literal notranslate"><span class="pre">None</span></code>, ISO 8601 format is used.</p></td>
 </tr>
-<tr class="row-even"><td><p>datafusion.format.time_format</p></td>
+<tr class="row-odd"><td><p>datafusion.format.time_format</p></td>
 <td><p>%H:%M:%S%.f</p></td>
 <td><p>Time format for time arrays</p></td>
 </tr>
-<tr class="row-odd"><td><p>datafusion.format.duration_format</p></td>
+<tr class="row-even"><td><p>datafusion.format.duration_format</p></td>
 <td><p>pretty</p></td>
 <td><p>Duration format. Can be either <code class="docutils literal notranslate"><span class="pre">&quot;pretty&quot;</span></code> or <code class="docutils literal notranslate"><span class="pre">&quot;ISO8601&quot;</span></code></p></td>
 </tr>
-<tr class="row-even"><td><p>datafusion.format.types_info</p></td>
+<tr class="row-odd"><td><p>datafusion.format.types_info</p></td>
 <td><p>false</p></td>
 <td><p>Show types in visual representation batches</p></td>
 </tr>
 </tbody>
 </table>
+</div>
+<p>You can also reset configuration options to default settings via SQL using the <code class="docutils literal notranslate"><span class="pre">RESET</span></code> command. For
+example, to set and reset <code class="docutils literal notranslate"><span class="pre">datafusion.execution.batch_size</span></code>:</p>
+<div class="highlight-sql notranslate"><div class="highlight"><pre><span></span><span class="k">SET</span><span class="w"> </span><span class="n">datafusion</span><span class="p">.</span><span class="n">execution</span><span class="p">.</span><span class="n">batch_size</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;10000&#39;</span><span class="p">;</span>
+
+<span class="k">SHOW</span><span class="w"> </span><span class="n">datafusion</span><span class="p">.</span><span class="n">execution</span><span class="p">.</span><span class="n">batch_size</span><span class="p">;</span>
+<span class="n">datafusion</span><span class="p">.</span><span class="n">execution</span><span class="p">.</span><span class="n">batch_size</span><span class="w"> </span><span class="mi">10000</span>
+
+<span class="k">RESET</span><span class="w"> </span><span class="n">datafusion</span><span class="p">.</span><span class="n">execution</span><span class="p">.</span><span class="n">batch_size</span><span class="p">;</span>
+
+<span class="k">SHOW</span><span class="w"> </span><span class="n">datafusion</span><span class="p">.</span><span class="n">execution</span><span class="p">.</span><span class="n">batch_size</span><span class="p">;</span>
+<span class="n">datafusion</span><span class="p">.</span><span class="n">execution</span><span class="p">.</span><span class="n">batch_size</span><span class="w"> </span><span class="mi">8192</span>
+</pre></div>
 </div>
 </section>
 </section>
