@@ -43,6 +43,7 @@ datafusion-common = { workspace = true }
 nom = "8.0.0"
 tempfile = { workspace = true }
 tokio = { workspace = true, features = ["rt-multi-thread", "parking_lot", "fs"] }
+async-stream = "0.3"
 
 [dev-dependencies]
 arrow-flight = { workspace = true }
