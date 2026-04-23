@@ -309,6 +309,7 @@ impl MetricsSet {
             MetricValue::EndTimestamp(_) => false,
             MetricValue::PruningMetrics { name, .. } => name == metric_name,
             MetricValue::Ratio { name, .. } => name == metric_name,
+            MetricValue::ThreadMigrations(_) => false,
             MetricValue::Custom { .. } => false,
         })
     }

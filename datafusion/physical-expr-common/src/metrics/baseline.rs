@@ -17,7 +17,15 @@
 
 //! Metrics common for almost all operators
 
-use std::{borrow::Cow, collections::BTreeMap, sync::Arc, task::Poll};
+use std::{
+    borrow::Cow,
+    collections::BTreeMap,
+    sync::{
+        Arc,
+        atomic::{AtomicUsize, Ordering},
+    },
+    task::Poll,
+};
 
 use arrow::record_batch::RecordBatch;
 use datafusion_common::{Result, utils::memory::get_record_batch_memory_size};
@@ -70,8 +78,12 @@ pub struct BaselineMetrics {
 
     /// output batches: the total output batch count
     output_batches: Count,
-    // Remember to update `docs/source/user-guide/metrics.md` when updating comments
-    // or adding new metrics
+
+    /// thread migrations: the total number of times the task migrated between threads
+    thread_migrations: Count,
+
+    /// last thread id: the ID of the thread that last polled this operator
+    last_thread_id: Arc<AtomicUsize>,
 }
 
 impl BaselineMetrics {
@@ -96,6 +108,10 @@ impl BaselineMetrics {
             output_batches: MetricBuilder::new(metrics)
                 .with_type(super::MetricType::Dev)
                 .output_batches(partition),
+            thread_migrations: MetricBuilder::new(metrics)
+                .with_type(super::MetricType::Dev)
+                .thread_migrations(partition),
+            last_thread_id: Arc::new(AtomicUsize::new(usize::MAX)),
         }
     }
 
@@ -111,6 +127,8 @@ impl BaselineMetrics {
             output_rows: Default::default(),
             output_bytes: Default::default(),
             output_batches: Default::default(),
+            thread_migrations: Default::default(),
+            last_thread_id: Arc::new(AtomicUsize::new(usize::MAX)),
         }
     }
 
@@ -218,6 +236,13 @@ impl BaselineMetrics {
         &self,
         poll: Poll<Option<Result<RecordBatch>>>,
     ) -> Poll<Option<Result<RecordBatch>>> {
+        // Record thread migration
+        let current_thread_id = thread_id_to_usize(std::thread::current().id());
+        let last_id = self.last_thread_id.swap(current_thread_id, Ordering::Relaxed);
+        if last_id != usize::MAX && last_id != current_thread_id {
+            self.thread_migrations.add(1);
+        }
+
         if let Poll::Ready(maybe_batch) = &poll {
             match maybe_batch {
                 Some(Ok(batch)) => {
@@ -235,6 +260,15 @@ impl Drop for BaselineMetrics {
     fn drop(&mut self) {
         self.try_done()
     }
+}
+
+fn thread_id_to_usize(tid: std::thread::ThreadId) -> usize {
+    let s = format!("{tid:?}");
+    s.chars()
+        .filter(|c| c.is_ascii_digit())
+        .collect::<String>()
+        .parse()
+        .unwrap_or(0)
 }
 
 /// See [`BaselineMetrics::output_rows_skew_metric`] for the algorithm.

@@ -174,6 +174,15 @@ impl<'a> MetricBuilder<'a> {
         count
     }
 
+    /// Consume self and create a new counter for recording thread migrations
+    pub fn thread_migrations(self, partition: usize) -> Count {
+        let count = Count::new();
+        self.with_category(MetricCategory::Uncategorized)
+            .with_partition(partition)
+            .build(MetricValue::ThreadMigrations(count.clone()));
+        count
+    }
+
     /// Consume self and create a new counter for recording total output bytes
     pub fn output_bytes(self, partition: usize) -> Count {
         let count = Count::new();

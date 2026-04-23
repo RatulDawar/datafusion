@@ -645,6 +645,8 @@ pub enum MetricValue {
     OutputBatches(Count),
     /// Total size of spilled rows produced: "spilled_rows" metric
     SpilledRows(Count),
+    /// Number of times the task migrated between threads
+    ThreadMigrations(Count),
     /// Current memory used
     CurrentMemoryUsage(Gauge),
     /// Operator defined count.
@@ -716,6 +718,10 @@ impl PartialEq for MetricValue {
             (MetricValue::SpilledRows(count), MetricValue::SpilledRows(other)) => {
                 count == other
             }
+            (
+                MetricValue::ThreadMigrations(count),
+                MetricValue::ThreadMigrations(other),
+            ) => count == other,
             (
                 MetricValue::CurrentMemoryUsage(gauge),
                 MetricValue::CurrentMemoryUsage(other),
@@ -796,6 +802,7 @@ impl MetricValue {
             Self::OutputBytes(_) => "output_bytes",
             Self::OutputBatches(_) => "output_batches",
             Self::SpilledRows(_) => "spilled_rows",
+            Self::ThreadMigrations(_) => "thread_migrations",
             Self::CurrentMemoryUsage(_) => "mem_used",
             Self::ElapsedCompute(_) => "elapsed_compute",
             Self::Count { name, .. } => name.borrow(),
@@ -819,6 +826,7 @@ impl MetricValue {
             Self::OutputBytes(bytes) => bytes.value(),
             Self::OutputBatches(count) => count.value(),
             Self::SpilledRows(count) => count.value(),
+            Self::ThreadMigrations(count) => count.value(),
             Self::CurrentMemoryUsage(used) => used.value(),
             Self::ElapsedCompute(time) => time.value(),
             Self::Count { count, .. } => count.value(),
@@ -854,6 +862,7 @@ impl MetricValue {
             Self::OutputBytes(_) => Self::OutputBytes(Count::new()),
             Self::OutputBatches(_) => Self::OutputBatches(Count::new()),
             Self::SpilledRows(_) => Self::SpilledRows(Count::new()),
+            Self::ThreadMigrations(_) => Self::ThreadMigrations(Count::new()),
             Self::CurrentMemoryUsage(_) => Self::CurrentMemoryUsage(Gauge::new()),
             Self::ElapsedCompute(_) => Self::ElapsedCompute(Time::new()),
             Self::Count { name, .. } => Self::Count {
@@ -908,8 +917,9 @@ impl MetricValue {
             | (Self::SpillCount(count), Self::SpillCount(other_count))
             | (Self::SpilledBytes(count), Self::SpilledBytes(other_count))
             | (Self::OutputBytes(count), Self::OutputBytes(other_count))
-            | (Self::OutputBatches(count), Self::OutputBatches(other_count))
+            |             (Self::OutputBatches(count), Self::OutputBatches(other_count))
             | (Self::SpilledRows(count), Self::SpilledRows(other_count))
+            | (Self::ThreadMigrations(count), Self::ThreadMigrations(other_count))
             | (
                 Self::Count { count, .. },
                 Self::Count {
@@ -1009,14 +1019,15 @@ impl MetricValue {
             Self::SpillCount(_) => 10,
             Self::SpilledBytes(_) => 11,
             Self::SpilledRows(_) => 12,
-            Self::CurrentMemoryUsage(_) => 13,
-            Self::Count { .. } => 14,
-            Self::Gauge { .. } => 15,
-            Self::Time { .. } => 16,
-            Self::Ratio { .. } => 17,
-            Self::StartTimestamp(_) => 18, // show timestamps last
-            Self::EndTimestamp(_) => 19,
-            Self::Custom { .. } => 20,
+            Self::ThreadMigrations(_) => 13,
+            Self::CurrentMemoryUsage(_) => 14,
+            Self::Count { .. } => 15,
+            Self::Gauge { .. } => 16,
+            Self::Time { .. } => 17,
+            Self::Ratio { .. } => 18,
+            Self::StartTimestamp(_) => 19, // show timestamps last
+            Self::EndTimestamp(_) => 20,
+            Self::Custom { .. } => 21,
         }
     }
 
@@ -1034,6 +1045,7 @@ impl Display for MetricValue {
             | Self::OutputBatches(count)
             | Self::SpillCount(count)
             | Self::SpilledRows(count)
+            | Self::ThreadMigrations(count)
             | Self::Count { count, .. } => {
                 write!(f, "{count}")
             }
