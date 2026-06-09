@@ -392,6 +392,9 @@ impl ParquetOpenState {
                         prepared_row_groups.load_page_index().boxed(),
                     ))
                 } else {
+                    // Skip page index I/O: no page-pruning predicate, no surviving row
+                    // groups, or every surviving row group is fully matched by row-group
+                    // statistics alone (page index cannot prune further).
                     Ok(ParquetOpenState::LoadBloomFilters(
                         prepared_row_groups.load_bloom_filters().boxed(),
                     ))
