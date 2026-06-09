@@ -17,15 +17,14 @@
 
 use crate::coalesce::LimitedBatchCoalescer;
 use crate::metrics::{ExecutionPlanMetricsSet, MetricsSet};
-use crate::stream::RecordBatchStreamAdapter;
+use crate::stream::{EmptyRecordBatchStream, RecordBatchStreamAdapter};
 use crate::{
     DisplayAs, DisplayFormatType, ExecutionPlan, ExecutionPlanProperties, PlanProperties,
     check_if_same_properties,
 };
 use arrow::array::RecordBatch;
 use arrow_schema::{Fields, Schema, SchemaRef};
-use datafusion_common::tree_node::TreeNodeRecursion;
-use datafusion_common::tree_node::{Transformed, TreeNode};
+use datafusion_common::tree_node::{Transformed, TreeNode, TreeNodeRecursion};
 use datafusion_common::{Result, assert_eq_or_internal_err};
 use datafusion_execution::{RecordBatchStream, SendableRecordBatchStream, TaskContext};
 use datafusion_physical_expr::ScalarFunctionExpr;
@@ -165,13 +164,6 @@ impl ExecutionPlan for AsyncFuncExec {
         vec![&self.input]
     }
 
-    fn apply_expressions(
-        &self,
-        _f: &mut dyn FnMut(&dyn PhysicalExpr) -> Result<TreeNodeRecursion>,
-    ) -> Result<TreeNodeRecursion> {
-        Ok(TreeNodeRecursion::Continue)
-    }
-
     fn with_new_children(
         self: Arc<Self>,
         mut children: Vec<Arc<dyn ExecutionPlan>>,
@@ -290,6 +282,10 @@ impl Stream for CoalesceInputStream {
                 }
                 None => {
                     completed = true;
+                    // Release the input pipeline's resources.
+                    let input_schema = self.input_stream.schema();
+                    self.input_stream =
+                        Box::pin(EmptyRecordBatchStream::new(input_schema));
                     if let Err(err) = self.batch_coalescer.finish() {
                         return Poll::Ready(Some(Err(err)));
                     }
@@ -338,8 +334,7 @@ impl AsyncMapper {
     ) -> Result<()> {
         // recursively look for references to async functions
         physical_expr.apply(|expr| {
-            if let Some(scalar_func_expr) =
-                expr.as_any().downcast_ref::<ScalarFunctionExpr>()
+            if let Some(scalar_func_expr) = expr.downcast_ref::<ScalarFunctionExpr>()
                 && scalar_func_expr.fun().as_async().is_some()
             {
                 let next_name = self.next_column_name();
