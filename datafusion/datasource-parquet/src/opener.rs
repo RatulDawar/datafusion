@@ -1593,11 +1593,7 @@ fn should_load_page_index(
     page_pruning_predicate: Option<&Arc<PagePruningAccessPlanFilter>>,
     row_groups: &RowGroupAccessPlanFilter,
 ) -> bool {
-    if page_pruning_predicate.is_none() {
-        return false;
-    }
-
-    if row_groups.is_empty() {
+    if page_pruning_predicate.is_none() || row_groups.is_empty() {
         return false;
     }
 
