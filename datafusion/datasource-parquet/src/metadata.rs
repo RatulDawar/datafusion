@@ -146,7 +146,8 @@ impl<'a> DFParquetMetadata<'a> {
 
     /// Fetch parquet metadata from the remote object store
     pub async fn fetch_metadata(&self) -> Result<Arc<ParquetMetaData>> {
-        let cache_metadata = self.cache_metadata_enabled();
+        let cache_metadata =
+            !cfg!(feature = "parquet_encryption") || self.decryption_properties.is_none();
         let page_index_policy = self.effective_page_index_policy(cache_metadata);
 
         if cache_metadata
@@ -159,6 +160,8 @@ impl<'a> DFParquetMetadata<'a> {
                 .downcast_ref::<CachedParquetMetaData>()
         {
             let cached_metadata = Arc::clone(cached_parquet.parquet_metadata());
+            // Reuse the cache when it already has page index, or when the caller
+            // asked to skip page index I/O (footer-only metadata is sufficient).
             if Self::metadata_has_page_index(cached_metadata.as_ref())
                 || page_index_policy == PageIndexPolicy::Skip
             {
@@ -181,17 +184,6 @@ impl<'a> DFParquetMetadata<'a> {
         let cached = Arc::clone(&metadata);
         self.maybe_cache_metadata(cache_metadata, cached).await?;
         Ok(metadata)
-    }
-
-    fn cache_metadata_enabled(&self) -> bool {
-        #[cfg(feature = "parquet_encryption")]
-        {
-            self.decryption_properties.is_none()
-        }
-        #[cfg(not(feature = "parquet_encryption"))]
-        {
-            true
-        }
     }
 
     fn effective_page_index_policy(&self, cache_metadata: bool) -> PageIndexPolicy {
