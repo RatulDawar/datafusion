@@ -144,7 +144,28 @@ impl<'a> DFParquetMetadata<'a> {
         self
     }
 
-    /// Fetch parquet metadata from the remote object store
+    /// Fetch parquet metadata from the remote object store.
+    ///
+    /// ```text
+    /// fetch_metadata
+    /// │
+    /// ├─ cache_metadata = encryption check
+    /// ├─ page_index_policy = caller override OR default
+    /// │
+    /// ├─ CACHE HIT?
+    /// │   │
+    /// │   ├─ has index OR policy=Skip?  → return cache
+    /// │   │
+    /// │   └─ else (footer only, wants index)
+    /// │         → load_page_index (index bytes only)
+    /// │         → cache_metadata() if allowed
+    /// │         → return
+    /// │
+    /// └─ CACHE MISS
+    ///       → fetch_metadata_from_store(policy)
+    ///       → cache_metadata() if allowed
+    ///       → return
+    /// ```
     pub async fn fetch_metadata(&self) -> Result<Arc<ParquetMetaData>> {
         let cache_metadata =
             !cfg!(feature = "parquet_encryption") || self.decryption_properties.is_none();
