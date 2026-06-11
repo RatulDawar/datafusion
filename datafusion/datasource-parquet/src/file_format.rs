@@ -354,7 +354,7 @@ impl FileFormat for ParquetFormat {
                     &object.location,
                 )
                 .await?;
-                let result = DFParquetMetadata::new(store.as_ref(), object)
+                let result = DFParquetMetadata::new(Arc::clone(store), object)
                     .with_metadata_size_hint(self.metadata_size_hint())
                     .with_decryption_properties(file_decryption_properties)
                     .with_file_metadata_cache(Some(Arc::clone(&file_metadata_cache)))
@@ -414,7 +414,7 @@ impl FileFormat for ParquetFormat {
                 .await?;
         let file_metadata_cache =
             state.runtime_env().cache_manager.get_file_metadata_cache();
-        DFParquetMetadata::new(store, object)
+        DFParquetMetadata::new(Arc::clone(store), object)
             .with_metadata_size_hint(self.metadata_size_hint())
             .with_decryption_properties(file_decryption_properties)
             .with_file_metadata_cache(Some(file_metadata_cache))
@@ -434,7 +434,7 @@ impl FileFormat for ParquetFormat {
                 .await?;
         let file_metadata_cache =
             state.runtime_env().cache_manager.get_file_metadata_cache();
-        let metadata = DFParquetMetadata::new(store, object)
+        let metadata = DFParquetMetadata::new(Arc::clone(store), object)
             .with_metadata_size_hint(self.metadata_size_hint())
             .with_decryption_properties(file_decryption_properties)
             .with_file_metadata_cache(Some(file_metadata_cache))
@@ -455,7 +455,7 @@ impl FileFormat for ParquetFormat {
                 .await?;
         let file_metadata_cache =
             state.runtime_env().cache_manager.get_file_metadata_cache();
-        let metadata = DFParquetMetadata::new(store, object)
+        let metadata = DFParquetMetadata::new(Arc::clone(store), object)
             .with_metadata_size_hint(self.metadata_size_hint())
             .with_decryption_properties(file_decryption_properties)
             .with_file_metadata_cache(Some(file_metadata_cache))
@@ -622,7 +622,7 @@ impl MetadataFetch for ObjectStoreFetch<'_> {
     note = "Use `DFParquetMetadata::fetch_metadata` instead"
 )]
 pub async fn fetch_parquet_metadata(
-    store: &dyn ObjectStore,
+    store: Arc<dyn ObjectStore>,
     object_meta: &ObjectMeta,
     size_hint: Option<usize>,
     decryption_properties: Option<&FileDecryptionProperties>,
@@ -645,7 +645,7 @@ pub async fn fetch_parquet_metadata(
     note = "Use `DFParquetMetadata::fetch_statistics` instead"
 )]
 pub async fn fetch_statistics(
-    store: &dyn ObjectStore,
+    store: Arc<dyn ObjectStore>,
     table_schema: SchemaRef,
     file: &ObjectMeta,
     metadata_size_hint: Option<usize>,

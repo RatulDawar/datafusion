@@ -199,7 +199,7 @@ mod tests {
 
         let file_metadata_cache =
             ctx.runtime_env().cache_manager.get_file_metadata_cache();
-        let stats = DFParquetMetadata::new(&store, &meta[0])
+        let stats = DFParquetMetadata::new(Arc::clone(&store), &meta[0])
             .with_file_metadata_cache(Some(Arc::clone(&file_metadata_cache)))
             .fetch_statistics(&schema)
             .await?;
@@ -210,7 +210,7 @@ mod tests {
         assert_eq!(c1_stats.null_count, Precision::Exact(1));
         assert_eq!(c2_stats.null_count, Precision::Exact(3));
 
-        let stats = DFParquetMetadata::new(&store, &meta[1])
+        let stats = DFParquetMetadata::new(Arc::clone(&store), &meta[1])
             .with_file_metadata_cache(Some(Arc::clone(&file_metadata_cache)))
             .fetch_statistics(&schema)
             .await?;
@@ -383,7 +383,7 @@ mod tests {
         // for the remaining metadata
         let file_metadata_cache =
             ctx.runtime_env().cache_manager.get_file_metadata_cache();
-        let df_meta = DFParquetMetadata::new(store.as_ref(), &meta[0])
+        let df_meta = DFParquetMetadata::new(Arc::clone(&store) as Arc<dyn ObjectStore>, &meta[0])
             .with_metadata_size_hint(Some(9));
         df_meta.fetch_metadata().await?;
         assert_eq!(store.request_count(), 2);
@@ -436,7 +436,7 @@ mod tests {
 
         // Use the file size as the hint so we can get the full metadata from the first fetch
         let size_hint = meta[0].size as usize;
-        let df_meta = DFParquetMetadata::new(store.as_ref(), &meta[0])
+        let df_meta = DFParquetMetadata::new(Arc::clone(&store) as Arc<dyn ObjectStore>, &meta[0])
             .with_metadata_size_hint(Some(size_hint));
 
         df_meta.fetch_metadata().await?;
@@ -489,7 +489,7 @@ mod tests {
 
         // Use a size hint larger than the file size to make sure we don't panic
         let size_hint = (meta[0].size + 100) as usize;
-        let df_meta = DFParquetMetadata::new(store.as_ref(), &meta[0])
+        let df_meta = DFParquetMetadata::new(Arc::clone(&store) as Arc<dyn ObjectStore>, &meta[0])
             .with_metadata_size_hint(Some(size_hint));
 
         df_meta.fetch_metadata().await?;
@@ -554,7 +554,7 @@ mod tests {
         // No increase in request count because cache is not empty
         let file_metadata_cache =
             state.runtime_env().cache_manager.get_file_metadata_cache();
-        let stats = DFParquetMetadata::new(store.as_ref(), &files[0])
+        let stats = DFParquetMetadata::new(Arc::clone(&store) as Arc<dyn ObjectStore>, &files[0])
             .with_file_metadata_cache(Some(Arc::clone(&file_metadata_cache)))
             .fetch_statistics(&schema)
             .await?;
@@ -634,7 +634,7 @@ mod tests {
         // No increase in request count because cache is not empty
         let file_metadata_cache =
             state.runtime_env().cache_manager.get_file_metadata_cache();
-        let stats = DFParquetMetadata::new(store.as_ref(), &files[0])
+        let stats = DFParquetMetadata::new(Arc::clone(&store) as Arc<dyn ObjectStore>, &files[0])
             .with_file_metadata_cache(Some(Arc::clone(&file_metadata_cache)))
             .fetch_statistics(&schema)
             .await?;
@@ -663,7 +663,7 @@ mod tests {
         assert_eq!(c2_stats.min_value, Precision::Exact(null_i64.clone()));
 
         // No increase in request count because cache is not empty
-        let stats = DFParquetMetadata::new(store.as_ref(), &files[1])
+        let stats = DFParquetMetadata::new(Arc::clone(&store) as Arc<dyn ObjectStore>, &files[1])
             .with_file_metadata_cache(Some(Arc::clone(&file_metadata_cache)))
             .fetch_statistics(&schema)
             .await?;
