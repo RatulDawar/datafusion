@@ -306,7 +306,7 @@ impl AsyncFileReader for ParquetFileReader {
         _options: Option<&ArrowReaderOptions>,
     ) -> BoxFuture<'_, parquet::errors::Result<Arc<ParquetMetaData>>> {
         Box::pin(async move {
-            let metadata = DFParquetMetadata::new(Arc::clone(&self.store), &self.meta)
+            let metadata = DFParquetMetadata::new(self.store.as_ref(), &self.meta)
                 .with_metadata_size_hint(self.metadata_size_hint)
                 .fetch_metadata()
                 .await

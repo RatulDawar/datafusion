@@ -35,13 +35,16 @@ use datafusion_functions_aggregate_common::min_max::{MaxAccumulator, MinAccumula
 use datafusion_physical_expr::expressions::Column;
 use datafusion_physical_expr_common::sort_expr::{LexOrdering, PhysicalSortExpr};
 use datafusion_physical_plan::Accumulator;
+use bytes::Bytes;
+use futures::FutureExt;
 use log::debug;
 use object_store::path::Path;
-use object_store::{ObjectMeta, ObjectStore};
+use object_store::{ObjectMeta, ObjectStore, ObjectStoreExt};
 use parquet::DecodeResult;
 use parquet::arrow::arrow_reader::statistics::StatisticsConverter;
-use parquet::arrow::async_reader::ParquetObjectReader;
+use parquet::arrow::async_reader::MetadataFetch;
 use parquet::arrow::{parquet_column, parquet_to_arrow_schema};
+use parquet::errors::ParquetError;
 use parquet::file::metadata::{
     PageIndexPolicy, ParquetMetaData, ParquetMetaDataPushDecoder, ParquetMetaDataReader,
     RowGroupMetaData, SortingColumn,
@@ -50,6 +53,7 @@ use parquet::file::statistics::Statistics as ParquetStatistics;
 use parquet::schema::types::SchemaDescriptor;
 use std::any::Any;
 use std::collections::HashMap;
+use std::ops::Range;
 use std::sync::Arc;
 
 /// Minimum fraction of row groups that must report NDV statistics for the
@@ -66,7 +70,7 @@ const PARTIAL_NDV_THRESHOLD: f64 = 0.75;
 /// [`ParquetFileReaderFactory`]: crate::ParquetFileReaderFactory
 #[derive(Debug)]
 pub struct DFParquetMetadata<'a> {
-    store: Arc<dyn ObjectStore>,
+    store: &'a dyn ObjectStore,
     object_meta: &'a ObjectMeta,
     metadata_size_hint: Option<usize>,
     decryption_properties: Option<Arc<FileDecryptionProperties>>,
@@ -82,7 +86,7 @@ pub struct DFParquetMetadata<'a> {
 }
 
 impl<'a> DFParquetMetadata<'a> {
-    pub fn new(store: Arc<dyn ObjectStore>, object_meta: &'a ObjectMeta) -> Self {
+    pub fn new(store: &'a dyn ObjectStore, object_meta: &'a ObjectMeta) -> Self {
         Self {
             store,
             object_meta,
@@ -182,7 +186,7 @@ impl<'a> DFParquetMetadata<'a> {
                 return Ok(cached_metadata);
             }
             let metadata = Self::load_page_index(
-                &self.store,
+                self.store,
                 self.object_meta,
                 cached_metadata,
             )
@@ -287,23 +291,19 @@ impl<'a> DFParquetMetadata<'a> {
     }
 
     async fn load_page_index(
-        store: &Arc<dyn ObjectStore>,
+        store: &dyn ObjectStore,
         object_meta: &ObjectMeta,
         metadata: Arc<ParquetMetaData>,
     ) -> Result<Arc<ParquetMetaData>> {
         if metadata.column_index().is_some() && metadata.offset_index().is_some() {
             return Ok(metadata);
         }
-        let m = Arc::try_unwrap(metadata).unwrap_or_else(|e| e.as_ref().clone());
-        let mut reader = ParquetMetaDataReader::new_with_metadata(m)
+        let metadata = Arc::try_unwrap(metadata).unwrap_or_else(|shared| (*shared).clone());
+        let mut reader = ParquetMetaDataReader::new_with_metadata(metadata)
             .with_page_index_policy(PageIndexPolicy::Optional);
-        let mut object_reader = ParquetObjectReader::new(
-            Arc::clone(store),
-            object_meta.location.clone(),
-        )
-        .with_file_size(object_meta.size);
+        let fetch = ObjectStoreMetadataFetch::new(store, object_meta);
         reader
-            .load_page_index(&mut object_reader)
+            .load_page_index(fetch)
             .await
             .map_err(DataFusionError::from)?;
         Ok(Arc::new(reader.finish().map_err(DataFusionError::from)?))
@@ -862,6 +862,29 @@ fn has_any_exact_match(
     let eq_mask = eq(&scalar_array, &array).ok()?;
     let combined_mask = and(&eq_mask, exactness).ok()?;
     Some(combined_mask.has_true())
+}
+
+struct ObjectStoreMetadataFetch<'a> {
+    store: &'a dyn ObjectStore,
+    meta: &'a ObjectMeta,
+}
+
+impl<'a> ObjectStoreMetadataFetch<'a> {
+    fn new(store: &'a dyn ObjectStore, meta: &'a ObjectMeta) -> Self {
+        Self { store, meta }
+    }
+}
+
+impl MetadataFetch for ObjectStoreMetadataFetch<'_> {
+    fn fetch(&mut self, range: Range<u64>) -> futures::future::BoxFuture<'_, Result<Bytes, ParquetError>> {
+        async {
+            self.store
+                .get_range(&self.meta.location, range)
+                .await
+                .map_err(ParquetError::from)
+        }
+        .boxed()
+    }
 }
 
 /// Wrapper to implement [`FileMetadata`] for [`ParquetMetaData`].

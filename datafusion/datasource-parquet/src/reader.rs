@@ -306,7 +306,7 @@ impl AsyncFileReader for CachedParquetFileReader {
 
             let page_index_policy = options.map(|o| o.column_index_policy());
 
-            DFParquetMetadata::new(Arc::clone(&self.store), &object_meta)
+            DFParquetMetadata::new(&self.store, &object_meta)
                 .with_decryption_properties(file_decryption_properties)
                 .with_file_metadata_cache(Some(Arc::clone(&metadata_cache)))
                 .with_metadata_size_hint(self.metadata_size_hint)
