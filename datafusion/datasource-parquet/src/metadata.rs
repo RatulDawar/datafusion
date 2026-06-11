@@ -18,6 +18,7 @@
 //! [`DFParquetMetadata`] for fetching Parquet file metadata, statistics
 //! and schema information.
 
+use crate::file_format::ObjectStoreFetch;
 use crate::{Int96Coercer, apply_file_schema_type_coercions};
 use arrow::array::{Array, ArrayRef, BooleanArray};
 use arrow::compute::kernels::cmp::eq;
@@ -35,16 +36,12 @@ use datafusion_functions_aggregate_common::min_max::{MaxAccumulator, MinAccumula
 use datafusion_physical_expr::expressions::Column;
 use datafusion_physical_expr_common::sort_expr::{LexOrdering, PhysicalSortExpr};
 use datafusion_physical_plan::Accumulator;
-use bytes::Bytes;
-use futures::FutureExt;
 use log::debug;
 use object_store::path::Path;
-use object_store::{ObjectMeta, ObjectStore, ObjectStoreExt};
+use object_store::{ObjectMeta, ObjectStore};
 use parquet::DecodeResult;
 use parquet::arrow::arrow_reader::statistics::StatisticsConverter;
-use parquet::arrow::async_reader::MetadataFetch;
 use parquet::arrow::{parquet_column, parquet_to_arrow_schema};
-use parquet::errors::ParquetError;
 use parquet::file::metadata::{
     PageIndexPolicy, ParquetMetaData, ParquetMetaDataPushDecoder, ParquetMetaDataReader,
     RowGroupMetaData, SortingColumn,
@@ -53,7 +50,6 @@ use parquet::file::statistics::Statistics as ParquetStatistics;
 use parquet::schema::types::SchemaDescriptor;
 use std::any::Any;
 use std::collections::HashMap;
-use std::ops::Range;
 use std::sync::Arc;
 
 /// Minimum fraction of row groups that must report NDV statistics for the
@@ -301,7 +297,7 @@ impl<'a> DFParquetMetadata<'a> {
         let metadata = Arc::try_unwrap(metadata).unwrap_or_else(|shared| (*shared).clone());
         let mut reader = ParquetMetaDataReader::new_with_metadata(metadata)
             .with_page_index_policy(PageIndexPolicy::Optional);
-        let fetch = ObjectStoreMetadataFetch::new(store, object_meta);
+        let fetch = ObjectStoreFetch::new(store, object_meta);
         reader
             .load_page_index(fetch)
             .await
@@ -862,29 +858,6 @@ fn has_any_exact_match(
     let eq_mask = eq(&scalar_array, &array).ok()?;
     let combined_mask = and(&eq_mask, exactness).ok()?;
     Some(combined_mask.has_true())
-}
-
-struct ObjectStoreMetadataFetch<'a> {
-    store: &'a dyn ObjectStore,
-    meta: &'a ObjectMeta,
-}
-
-impl<'a> ObjectStoreMetadataFetch<'a> {
-    fn new(store: &'a dyn ObjectStore, meta: &'a ObjectMeta) -> Self {
-        Self { store, meta }
-    }
-}
-
-impl MetadataFetch for ObjectStoreMetadataFetch<'_> {
-    fn fetch(&mut self, range: Range<u64>) -> futures::future::BoxFuture<'_, Result<Bytes, ParquetError>> {
-        async {
-            self.store
-                .get_range(&self.meta.location, range)
-                .await
-                .map_err(ParquetError::from)
-        }
-        .boxed()
-    }
 }
 
 /// Wrapper to implement [`FileMetadata`] for [`ParquetMetaData`].
